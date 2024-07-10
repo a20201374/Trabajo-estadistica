@@ -1,0 +1,462 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(rio)
+library(tidyverse)
+library(cluster)
+library(ggplot2)
+library(modelsummary)
+library(kableExtra)
+library(factoextra)
+library(psych)
+library(lmtest)
+library(GPArotation)
+library(ggcorrplot)
+
+link_dato100="https://raw.githubusercontent.com/a20201374/Trabajo-estadistica/main/dato100.csv"
+
+dato100=read.csv(link_dato100)
+
+
+link_dato200 <- "https://raw.githubusercontent.com/a20201374/Trabajo-estadistica/main/dato200.csv"
+
+dato200=read.csv(link_dato200)
+
+data <- merge(dato100, dato200, by = "ID_CARATULA", all = FALSE)
+
+data <- data[, c("P104_1", "P114A", "P101", "P130", "P126", "P129", "P135", "P136", "P128", "P215")]
+
+sum(data$P104_1 <= 3, na.rm = TRUE)
+
+sum(data$P104_1 <= 5, na.rm = TRUE)
+
+
+data$termino_secundaria <- ifelse(data$P104_1 <= 5, 0, 1)
+
+data$termino_secundaria <- factor(data$termino_secundaria, levels = c(0, 1), labels = c("No terminó", "Sí terminó"))
+
+data <- data %>%
+  filter(!is.na(termino_secundaria))
+
+data$P130 <- factor(data$P130, levels = c(1, 2), labels = c("Sí", "No"))
+data$P126 <- factor(data$P126, levels = c(1, 2), labels = c("Sí", "No"))
+data$P129 <- factor(data$P129, levels = c(1, 2), labels = c("Sí", "No"))
+data$P135 <- factor(data$P135, levels = c(1, 2), labels = c("Sí", "No"))
+data$P136 <- factor(data$P136, levels = c(1, 2), labels = c("Sí", "No"))
+data$P128 <- factor(data$P128, levels = c(1, 2), labels = c("Sí", "No"))
+data$P215 <- factor(data$P215, levels = c(1, 2), labels = c("Sí", "No"))
+
+
+
+data$P101 <- recode(data$P101, 
+                    `1` = "Quechua",
+                    `2` = "Aymara",
+                    `3` = "Ashaninka",
+                    `4` = "Awajun/Aguaruna",
+                    `5` = "Shipino - Konibo",
+                    `6` = "Otra lengua nativa",
+                    `7` = "Castellano",
+                    `8` = "Ingles",
+                    `9` = "Otra lengua extranjero",
+                    `10` = "Es sordomudo/mudo")
+
+
+
+
+
+
+
+
+data$P101 <- factor(data$P101, levels = c("Castellano", "Quechua", "Aymara","Ashaninka", "Shipino - Konibo", 
+                                         "Awajun/Aguaruna", "Otra lengua nativa", 
+                                         "Otra lengua extranjero", "Ingles", 
+                                         "Es sordomudo/mudo"))
+
+data <- na.omit(data)
+
+grafico_dependiente <- data %>%
+  count(termino_secundaria) %>%
+  ggplot(aes(x = "", y = n, fill = termino_secundaria)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros que terminaron la secundaria",
+       fill = "Terminó secundaria") +
+  theme_void()
+
+grafico130 <- data %>%
+  count(P130) %>%
+  ggplot(aes(x = "", y = n, fill = P130)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros escaparon de casa antes de los 15 años",
+       fill = "Escapo") +
+  theme_void()
+
+grafico126 <- data %>%
+  count(P126) %>%
+  ggplot(aes(x = "", y = n, fill = P126)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros que recibieron abuso por sus padres",
+       fill = "Fue abusado en su infancia") +
+  theme_void()
+
+grafico129 <- data %>%
+  count(P129) %>%
+  ggplot(aes(x = "", y = n, fill = P129)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros cuyo padre le pegaba a su madre",
+       fill = "Hubo violencia familiar") +
+  theme_void()
+
+grafico135 <- data %>%
+  count(P135) %>%
+  ggplot(aes(x = "", y = n, fill = P135)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros cuyos amigos fueron delincuentes antes de los 15 años",
+       fill = "Fueron delincuentes") +
+  theme_void()
+
+grafico136 <- data %>%
+  count(P136) %>%
+  ggplot(aes(x = "", y = n, fill = P136)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros cuyos barrios tuvieron pandillas delictivas antes de los 15 años",
+       fill = "Hubo pandillas delictivas") +
+  theme_void()
+
+grafico128 <- data %>%
+  count(P128) %>%
+  ggplot(aes(x = "", y = n, fill = P128)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros cuyos padres consumieron drogas en su infancia",
+       fill = "Hubo consumo de drogas") +
+  theme_void()
+
+grafico215 <- data %>%
+  count(P215) %>%
+  ggplot(aes(x = "", y = n, fill = P215)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proporción de prisioneros que estuvieron en un centro juvenil",
+       fill = "Estuvo en un centro juvenil") +
+  theme_void()
+
+grafico101 <- data %>%
+    count(P101) %>%
+    ggplot(aes(x = "", y = n, fill = P101)) +
+    geom_bar(stat = "identity", width = 1) +
+    coord_polar("y") +
+    labs(title = "Proporción del lenguaje que hablan los prisioneros",
+         fill = "Lenguaje") +
+    theme_void()
+
+grafico114 <- ggplot(data, aes(x = "", y = P114A)) + 
+  geom_violin(fill = "purple") +
+  geom_boxplot(width = 0.1, fill = "yellow") +
+  labs(title = "Violin Plot de Edad a la que empezo a trabajar", y = "Edad")
+
+rlog1 <- glm(termino_secundaria ~ as.factor(P101),
+data = data, family = binomial(link = "logit"))
+
+prop_termino_secundaria <- data %>%
+group_by(P101) %>%
+summarise(prop_termino_secundaria = mean(termino_secundaria == "No terminó"))
+
+modelrlog1=list('Terminar la secundaria'=rlog1)
+
+modelo1 = modelsummary(modelrlog1,
+             title = "Regresión Logística",
+             stars = TRUE,
+             output = "kableExtra")
+
+grafico = ggplot(prop_termino_secundaria, aes(x = factor(P101), y = prop_termino_secundaria, fill = factor(P101))) +
+    geom_bar(stat = "identity", width = 0.7) +
+    scale_fill_manual(values = c("black", "black", "red", "black", "red", "red", "black", "black", "black", "red")) +  
+    labs(x = "Idioma", y = "Proporción de no terminó la secundaria", 
+         title = "Proporción de no terminó la secundaria por Idioma") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    
+residuals <- resid(rlog1, type = "deviance")
+supuesto1 = plot(residuals ~ P101, data = data)
+
+
+
+rlog2 <- glm(termino_secundaria ~ P114A + P101, 
+data = data, 
+family = binomial(link = "logit"))
+
+modelrlog2=list('Terminar la secundaria'=rlog2)
+
+modelo2 = modelsummary(modelrlog2,
+             title = "Regresión Logística",
+             stars = TRUE,
+             output = "kableExtra")
+
+x_vals <- seq(min(data$P114A, na.rm = TRUE), max(data$P114A, na.rm = TRUE), length.out = 100)
+
+predict_probability <- function(model, x) {
+  predict(rlog2, newdata = data.frame(P114A = x, P101 = "Castellano"), type = "response")
+}
+
+predicted_probs <- predict_probability(rlog2, x_vals)
+
+profile_df <- data.frame(P114A = x_vals, Predicted_Prob = predicted_probs)
+              
+grafico2 = ggplot(profile_df, aes(x = P114A, y = Predicted_Prob)) +
+  geom_line(color = "blue") +
+  labs(title = "Perfil de Probabilidad de Castellano",
+       x = "Edad en la que empezó a trabajar",
+       y = "Probabilidad predicha de terminar la secundaria") +
+  theme_minimal()
+
+
+predict_probability1 <- function(model, x) {
+  predict(rlog2, newdata = data.frame(P114A = x, P101 = "Quechua"), type = "response")
+}
+
+predicted_probs1 <- predict_probability1(rlog2, x_vals)
+
+profile_df1 <- data.frame(P114A = x_vals, Predicted_Prob = predicted_probs1)
+              
+grafico3 = ggplot(profile_df1, aes(x = P114A, y = Predicted_Prob)) +
+  geom_line(color = "blue") +
+  labs(title = "Perfil de Probabilidad de Quechuahablante",
+       x = "Edad en la que empezó a trabajar",
+       y = "Probabilidad predicha de terminar la secundaria") +
+  theme_minimal()
+
+predicted_lo <- predict(rlog1, type = "link")
+
+Linealiadad = ggplot(data, aes(x = P114A, y = predicted_lo)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    labs(x = "Edad", y = "Logit de la Probabilidad") +
+    theme_minimal()
+
+
+
+rlog3 <- glm(termino_secundaria ~ P114A + P101 + P130 + P126 + P129 + P135 + P136 + P128 + P215, 
+             data = data, 
+             family = binomial(link = "logit"))
+
+modelrlog3=list('Terminar la secundaria'=rlog3)
+
+modelo3 = modelsummary(modelrlog3,
+             title = "Regresión Logística",
+             stars = TRUE,
+             output = "kableExtra")
+
+lrtest(rlog1,rlog2, rlog3) %>%
+    kable(caption = "Tabla LRT para comparar modelos")%>%kableExtra::kable_styling(full_width = FALSE)
+
+
+dontselect=c("P104_1")
+select=setdiff(names(data),dontselect) 
+
+data=data[,select]
+
+corMatrix=polycor::hetcor(data)$correlations
+
+corgrafico <- ggcorrplot(corMatrix)
+
+data_numeric <- data[, c("P114A", "P101", "P130", "P126", "P129", "P135", "P136", "P128", "P215")]
+data_numeric <- data_numeric %>% mutate_if(is.factor, as.numeric)
+
+fa.parallel(data_numeric, fa = 'fa',correct = T,plot = F)
+
+resfa <- fa(data_numeric,
+            nfactors = 4,
+            cor = 'mixed',
+            rotate = "varimax", 
+            fm="minres")
+print(resfa$loadings)
+
+print(resfa$loadings,cutoff = 0.5)
+
+fa.diagram(resfa,main = "Resultados del EFA")
+
+sort(resfa$communality)
+
+sort(resfa$complexity)
+
+resfa$TLI
+
+resfa$rms
+
+resfa$RMSEA
+
+resfa$BIC
+
+
+
+
+set.seed(123)
+
+dataClus=data_numeric
+
+dataClus <- dataClus[sample(1:nrow(dataClus), 1000), ]
+
+g.dist = daisy(dataClus, metric="gower")
+
+graficocluster <-fviz_nbclust(dataClus, pam,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F)
+```
+Tema Central {data-icon="fa-signal"}
+===================================== 
+
+## Column {data-width="650"}
+
+### Variable Dependiente
+
+```{r}
+
+grafico_dependiente
+
+```
+
+## Column {data-width="350"}
+
+### Variables Independientes
+
+```{r}
+
+grafico101
+
+grafico114
+
+grafico126
+
+grafico128
+
+grafico129
+
+grafico130
+
+grafico135
+
+grafico136
+
+grafico215
+
+```
+
+
+
+
+
+Primera Hipotesis {data-icon="fa-signal"}
+===================================== 
+
+## Column {data-width="650"}
+
+### Primera hipotesis
+
+```{r}
+
+plot(grafico, pch = 20)
+
+```
+
+## Column {data-width="350"}
+
+### Tabla
+
+```{r}
+
+modelo1
+
+```
+
+
+
+
+Segunda Hipotesis {data-icon="fa-table"}
+=====================================    
+
+## Column {data-width="350"}
+
+### Segunda Hipotesis
+    
+```{r}
+plot(grafico2, pch = 20)
+```
+  
+###
+    
+```{r}
+plot(grafico3, pch = 20)
+```
+
+## Row {data-width="350"}
+
+### Tabla
+
+```{r}
+modelo2
+```
+
+### Supuesto de Linealidad
+
+```{r}
+plot(Linealiadad, pch = 20)
+```
+
+
+Tercera Hipotesis {data-icon="fa-table"}
+=====================================    
+
+## Column {data-width="350"}
+
+### Tercera Hipotesis
+    
+```{r}
+modelo3
+```
+
+### Comparacion de modelos
+
+```{r}
+lrtest(rlog1,rlog2, rlog3) %>%
+    kable(caption = "Tabla LRT para comparar modelos")%>%kableExtra::kable_styling(full_width = FALSE)
+```
+
+
+Clusterizacion {data-icon="fa-table"}
+=====================================     
+
+### Tablas 1
+    
+```{r}
+graficocluster
+```
+    
+
+Analisis Factorial {data-icon="fa-table"}
+=====================================     
+
+### Tablas 1
+    
+```{r}
+corgrafico
+```
+    
+### Tablas 2
+
+```{r}
+fa.diagram(resfa,main = "Resultados del EFA")
+```
+
+  
+  
