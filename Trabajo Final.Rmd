@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Trabajo"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -377,8 +377,15 @@ plot(grafico, pch = 20)
 
 modelo1
 
+
+
 ```
 
+### Residuals
+
+```{r}
+plot(rlog1, 2)
+```
 
 
 
@@ -407,10 +414,12 @@ plot(grafico3, pch = 20)
 modelo2
 ```
 
-### Supuesto de Linealidad
+### Supuestos
 
 ```{r}
 plot(Linealiadad, pch = 20)
+
+plot(rlog2, 2)
 ```
 
 
@@ -425,18 +434,30 @@ Tercera Hipotesis {data-icon="fa-table"}
 modelo3
 ```
 
+Tercera Hipotesis Interpretacion{data-icon="fa-table"}
+=====================================
+
+
+### Residuals
+```{r}
+plot(rlog3, 2)
+```
+
 ### Comparacion de modelos
 
 ```{r}
 lrtest(rlog1,rlog2, rlog3) %>%
     kable(caption = "Tabla LRT para comparar modelos")%>%kableExtra::kable_styling(full_width = FALSE)
+
+
+
 ```
 
 
 Clusterizacion {data-icon="fa-table"}
 =====================================     
 
-### Tablas 1
+### Numero de clusters
     
 ```{r}
 graficocluster
@@ -446,17 +467,39 @@ graficocluster
 Analisis Factorial {data-icon="fa-table"}
 =====================================     
 
-### Tablas 1
+### Correlacion
     
 ```{r}
 corgrafico
 ```
-    
-### Tablas 2
+
+### FAE
 
 ```{r}
 fa.diagram(resfa,main = "Resultados del EFA")
 ```
 
-  
-  
+Analisis Factorial Interpretacion {data-icon="fa-table"}
+=====================================  
+
+### Tucker Lewis   
+
+
+```{r}
+resfa$TLI
+
+```
+
+### RMS
+
+```{r}
+resfa$rms
+```
+
+### RMSEA
+
+```{r}
+resfa$RMSEA
+```
+
+
